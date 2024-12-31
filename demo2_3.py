@@ -1,4 +1,3 @@
-#chua co gi moi so voi 1.4.4
 from PyQt6 import QtCore, QtGui, QtWidgets
 from VisualizationSort import *
 import requests, json, timeit
@@ -12,7 +11,6 @@ class InputData:
         self.editNhietDo = editNhietDo
         self.editTocDoGio = editTocDoGio
         self.editDoAm = editDoAm
-
     def enable_manual_input(self, checked):
         """Enable or disable manual input based on rbNhapTay state."""
         if checked:  # If rbNhapTay is selected
@@ -33,7 +31,6 @@ class InputData:
             return self.fetch_data_from_manual_input() 
         else:
             return None
-
     def fetch_data_from_api(self):
         """Lấy dữ liệu từ API"""
         city = self.inputThanhPho.text()
@@ -60,11 +57,10 @@ class InputData:
         except Exception as e:
             QtWidgets.QMessageBox.critical(None, "Error", f"Đã xảy ra lỗi: {e}")
             return None
-
     def fetch_data_from_file(self):
         """Lấy dữ liệu từ file JSON"""
         try:
-            with open("weather_data10.json", "r", encoding="utf-8") as file:
+            with open("weather_data.json", "r", encoding="utf-8") as file:
                 data = json.load(file)
                 return data  # trả về toàn bộ dữ liệu trong file
         except FileNotFoundError:
@@ -74,8 +70,6 @@ class InputData:
         except Exception as e:
             QtWidgets.QMessageBox.warning(None, "Error", f"Đã xảy ra lỗi khi đọc file: {e}")
         return None
-    
-        
     def fetch_data_from_manual_input(self):
         
         """Lấy dữ liệu từ nhập tay"""
@@ -108,6 +102,9 @@ class Ui_MainWindow(object):
         self.buttonSort = QtWidgets.QPushButton(parent=self.centralwidget)
         self.buttonSort.setGeometry(QtCore.QRect(480, 550, 93, 28))
         self.buttonSort.setObjectName("buttonSort")
+        #
+        
+        #
         self.cbTieuChi = QtWidgets.QComboBox(parent=self.centralwidget)
         self.cbTieuChi.setGeometry(QtCore.QRect(20, 310, 101, 22))
         self.cbTieuChi.setObjectName("cbTieuChi")
@@ -117,6 +114,7 @@ class Ui_MainWindow(object):
         self.cbLoaiSapXep = QtWidgets.QComboBox(parent=self.centralwidget)
         self.cbLoaiSapXep.setGeometry(QtCore.QRect(20, 360, 101, 22))
         self.cbLoaiSapXep.setObjectName("cbLoaiSapXep")
+        self.cbLoaiSapXep.addItem("")
         self.cbLoaiSapXep.addItem("")
         self.cbLoaiSapXep.addItem("")
         self.cbThuTuSapXep = QtWidgets.QComboBox(parent=self.centralwidget)
@@ -195,8 +193,6 @@ class Ui_MainWindow(object):
                                             self.editNhietDo, self.editTocDoGio, self.editDoAm)
         #
         self.rbNhapTay.toggled.connect(self.input_data_handler.enable_manual_input)
-        #self.sortVisualizationWindow = None  # Reference for sorting visualization window
-      
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -204,11 +200,13 @@ class Ui_MainWindow(object):
         self.buttonDeleteAll.setText(_translate("MainWindow", "Xóa tất cả hàng"))
         self.buttonVisualizationSort.setText(_translate("MainWindow", "Trực quan"))
         self.buttonSort.setText(_translate("MainWindow", "Sắp xếp"))
+        
         self.cbTieuChi.setItemText(0, _translate("MainWindow", "Nhiệt độ"))
         self.cbTieuChi.setItemText(1, _translate("MainWindow", "Tốc độ gió"))
         self.cbTieuChi.setItemText(2, _translate("MainWindow", "Độ ẩm"))
         self.cbLoaiSapXep.setItemText(0, _translate("MainWindow", "Bubble Sort"))
         self.cbLoaiSapXep.setItemText(1, _translate("MainWindow", "Merge Sort"))
+        self.cbLoaiSapXep.setItemText(2, _translate("MainWindow", "Hybrid Sort"))
         self.cbThuTuSapXep.setItemText(0, _translate("MainWindow", "Tăng dần"))
         self.cbThuTuSapXep.setItemText(1, _translate("MainWindow", "Giảm dần"))
         self.rbTrucTiep.setText(_translate("MainWindow", "Lấy dữ liệu trực tiếp"))
@@ -220,7 +218,6 @@ class Ui_MainWindow(object):
         self.pushButton.setText(_translate("MainWindow", "Nhập Thành Phố"))
         self.pushButton_2.setText(_translate("MainWindow", "Hiện Kết Quả Lên Bảng"))
     
-
     def fetch_weather_data(self):
         """Lấy dữ liệu theo lựa chọn của người dùng và hiển thị"""
         data = self.input_data_handler.fetch_data()
@@ -239,7 +236,6 @@ class Ui_MainWindow(object):
                     if city and temp_kelvin is not None and wind_speed is not None and humidity is not None:
                         temp_celsius = temp_kelvin - 273.15
                         self.add_row_to_table(city, f"{temp_celsius:.2f} °C", f"{wind_speed} m/s", f"{humidity} %")
-
     def show_data_on_table(self):
         """Hiển thị dữ liệu lên bảng"""
         data = self.input_data_handler.fetch_data()
@@ -256,7 +252,6 @@ class Ui_MainWindow(object):
                     if city and temp_kelvin is not None and wind_speed is not None and humidity is not None:
                         temp_celsius = temp_kelvin - 273.15
                         self.add_row_to_table(city, f"{temp_celsius:.2f} °C", f"{wind_speed} m/s", f"{humidity} %")
-
     def add_row_to_table(self, city, temp, wind_speed, humidity):
         """Add a new row to the table."""
         row_position = self.tableWidget.rowCount()
@@ -311,10 +306,7 @@ class Ui_MainWindow(object):
         except Exception as e:
             QtWidgets.QMessageBox.warning(None, "Error", f"Đã có lỗi xảy ra: {str(e)}")
             return
-
-
         # Display the sorted data in the table
-        
     def sort_table(self):
         """Sort the data in the table according to the selected criteria and order."""
         # Get the selected sorting criterion and method
@@ -362,6 +354,9 @@ class Ui_MainWindow(object):
             elif sort_method == "Merge Sort":
                 merge_sorter = MergeSorter(rows, key_index, order)  # Pass the order ('asc' or 'desc')
                 sorted_rows = merge_sorter.sort()  # Call the sort method to get the sorted rows
+            elif sort_method == "Hybrid Sort":
+                hybrid_sorter = HybridSorter(rows, key_index, order)  # Use Hybrid Sort
+                sorted_rows = hybrid_sorter.sort()
             else:
                 QtWidgets.QMessageBox.warning(None, "Warning", "Phương thức sắp xếp không hợp lệ!")
                 return
@@ -382,11 +377,7 @@ class Ui_MainWindow(object):
 
         # Show a message box with the sorting time
         QtWidgets.QMessageBox.information(None, "Sắp xếp hoàn tất", f"Thời gian sắp xếp: {elapsed_time:.6f} giây")
-
-
- 
-                
-
+        
     def delete_selected_row(self):
         """Delete the selected row in the table."""
         row = self.tableWidget.currentRow()
