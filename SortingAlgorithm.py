@@ -75,3 +75,13 @@ class MergeSorter(Sorter):
             j += 1
 
         return result
+    
+class HybridSorter(Sorter):
+    def sort(self):
+        # Nếu số lượng phần tử lớn , sử dụng MergeSort
+        if len(self.data) >=64:
+            return MergeSorter(self.data, self.key_index, self.order).sort()
+        # Nếu số lượng phần tử nhỏ , sử dụng BubbleSort
+        else:
+            return BubbleSorter(self.data, self.key_index, self.order).sort()
+
