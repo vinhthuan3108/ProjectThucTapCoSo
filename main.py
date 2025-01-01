@@ -11,17 +11,45 @@ class InputData:
         self.editNhietDo = editNhietDo
         self.editTocDoGio = editTocDoGio
         self.editDoAm = editDoAm
+        self.csv_data = None  
     def enable_manual_input(self, checked):
         if checked:  
             self._set_editable(True)
+            self.csv_data = None
         else:  
             self._set_editable(False)
     def _set_editable(self, editable):
         self.editNhietDo.setReadOnly(not editable)
         self.editTocDoGio.setReadOnly(not editable)
         self.editDoAm.setReadOnly(not editable)
+
+    def load_csv_data(self, file_path):
+        try:
+            with open(file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.reader(csvfile)
+                data = list(reader)
+                self.csv_data = []
+                for row in data:
+                    if len(row) >= 4:
+                        city, temp, wind_speed, humidity = row[0], row[1], row[2], row[3]
+                        try:
+                            temp_value = float(temp)
+                            wind_speed_value = float(wind_speed)
+                            humidity_value = float(humidity)
+                            if not (-70 <= temp_value <= 70):
+                                raise ValueError(f"Nhiệt độ của thành phố {city} không hợp lệ. Nhiệt độ cần trong khoảng -70°C đến 70°C.")
+                            if not (0 <= wind_speed_value <= 70):
+                                raise ValueError(f"Tốc độ gió của thành phố {city} không hợp lệ. Tốc độ gió cần trong khoảng 0 m/s đến 70 m/s.")
+                            if not (0 <= humidity_value <= 100):
+                                raise ValueError(f"Độ ẩm của thành phố {city} không hợp lệ. Độ ẩm cần trong khoảng 0% đến 100%.")
+                            self.csv_data.append({"city": city, "temp": temp, "wind_speed": wind_speed, "humidity": humidity})
+                        except ValueError as e:
+                            QtWidgets.QMessageBox.warning(None, "Warning", f"{str(e)}. Dòng lỗi sẽ tự động bị xóa.")
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(None, "Error", f"Error reading CSV file: {str(e)}")
     def fetch_data(self):
         if self.rbTrucTiep.isChecked():
+            self.csv_data = None
             return self.fetch_data_from_api()
         elif self.rbNhapTay.isChecked():
             return self.fetch_data_from_manual_input()
@@ -157,7 +185,7 @@ class Ui_MainWindow(object):
         self.buttonSort.clicked.connect(self.visualization_sort_window)
         self.buttonSort.clicked.connect(self.sort_table)
         self.input_data_handler = InputData(self.rbTrucTiep, self.browseButton, self.rbNhapTay, self.inputThanhPho, 
-                                            self.editNhietDo, self.editTocDoGio, self.editDoAm)
+                                            self.editNhietDo, self.editTocDoGio, self.editDoAm,)
         self.rbNhapTay.toggled.connect(self.input_data_handler.enable_manual_input)
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -182,50 +210,14 @@ class Ui_MainWindow(object):
         self.pushButton.setText(_translate("MainWindow", "Nhập Thành Phố"))
         self.pushButton_2.setText(_translate("MainWindow", "Hiện Kết Quả Lên Bảng"))
     def browseFile(self):
-        # Mở hộp thoại chọn file
+        """Open file dialog to select a CSV file"""
         file_dialog = QtWidgets.QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv);;All Files (*)")
         if file_path:
-            # Nếu có file, đọc và hiển thị dữ liệu CSV
-            self.loadCsv(file_path)
-    def loadCsv(self, file_path):
-        """Đọc file CSV và hiển thị vào TableWidget, kiểm tra dữ liệu ngay khi đọc"""
-        try:
-            with open(file_path, newline='', encoding='utf-8') as csvfile:
-                reader = csv.reader(csvfile)
-                data = list(reader)  # Đọc tất cả dữ liệu vào danh sách
-                if data:
-                    self.tableWidget.setColumnCount(len(data[0]))  # Số cột là số lượng phần tử trong dòng đầu tiên
-                    self.tableWidget.setRowCount(len(data))  # Số dòng là số lượng dòng trong file
-                    row_index = 0
-                    while row_index < len(data):
-                        row_data = data[row_index]
-                        city = row_data[0]
-                        temp = row_data[1]
-                        wind_speed = row_data[2]
-                        humidity = row_data[3]
-                        try:
-                            temp_value = float(temp)
-                            if not (-70 <= temp_value <= 70):
-                                raise ValueError(f"Dữ liệu của thành phố {city} không hợp lệ: {temp}°C. Nhiệt độ phải trong khoảng -70°C đến 70°C")
-                            wind_speed_value = float(wind_speed)
-                            if not (0 <= wind_speed_value <= 70):
-                                raise ValueError(f"Dữ liệu của thành phố {city} không hợp lệ: {wind_speed}m/s.Tốc độ gió phải trong khoảng 0 m/s đến 70 m/s.")
-                            humidity_value = float(humidity)
-                            if not (0 <= humidity_value <= 100):
-                                raise ValueError(f"Dữ liệu của thành phố {city} không hợp lệ: {humidity}%.Độ ẩm phải trong khoảng 0% đến 100%.")
-                        except ValueError as ve:
-                            QtWidgets.QMessageBox.warning(None, "Warning", f"{ve}. Dữ liệu sai sẽ không được hiển thị")
-                            self.tableWidget.removeRow(row_index)  # Xóa dòng không hợp lệ
-                            data.pop(row_index)  # Xóa dòng khỏi dữ liệu
-                            continue  # Tiếp tục với dòng tiếp theo
-                        self.tableWidget.setItem(row_index, 0, QtWidgets.QTableWidgetItem(city))
-                        self.tableWidget.setItem(row_index, 1, QtWidgets.QTableWidgetItem(temp))
-                        self.tableWidget.setItem(row_index, 2, QtWidgets.QTableWidgetItem(wind_speed))
-                        self.tableWidget.setItem(row_index, 3, QtWidgets.QTableWidgetItem(humidity))
-                        row_index += 1  # Chuyển sang dòng tiếp theo
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(None, "Error", f"Lỗi khi đọc file: {str(e)}. Có thể tham khảo theo file mẫu cities_data.csv")
+            # Load the data from CSV into InputData
+            self.input_data_handler.load_csv_data(file_path)
+            # Now show the data from CSV into the table
+            self.show_data_on_table()
     def fetch_weather_data(self):
         data = self.input_data_handler.fetch_data()
         if data:
@@ -233,7 +225,7 @@ class Ui_MainWindow(object):
                 self.editNhietDo.setText(data['temp'])
                 self.editTocDoGio.setText(data['wind_speed'])
                 self.editDoAm.setText(data['humidity'])
-            elif isinstance(data, list):  # Dữ liệu từ file JSON
+            elif isinstance(data, list): 
                 for item in data:
                     city = item.get("name")
                     temp_kelvin = item.get("main", {}).get("temp")
@@ -244,20 +236,18 @@ class Ui_MainWindow(object):
                         temp_celsius = temp_kelvin - 273.15
                         self.add_row_to_table(city, f"{temp_celsius:.2f} °C", f"{wind_speed} m/s", f"{humidity} %")
     def show_data_on_table(self):
-        data = self.input_data_handler.fetch_data()
-        if data:
-            if isinstance(data, dict):  # Đảm bảo là dữ liệu từ API hoặc nhập tay
+        """Show data from either API/manual input or CSV"""
+        if self.input_data_handler.csv_data:
+            for item in self.input_data_handler.csv_data:
+                city = item["city"]
+                temp = item["temp"]
+                wind_speed = item["wind_speed"]
+                humidity = item["humidity"]
+                self.add_row_to_table(city, temp, wind_speed, humidity)
+        else:
+            data = self.input_data_handler.fetch_data()
+            if data:
                 self.add_row_to_table(data["city"], data["temp"], data["wind_speed"], data["humidity"])
-            elif isinstance(data, list):  # Dữ liệu từ file JSON
-                for item in data:
-                    city = item.get("name")
-                    temp_kelvin = item.get("main", {}).get("temp")
-                    wind_speed = item.get("wind", {}).get("speed")
-                    humidity = item.get("main", {}).get("humidity")
-
-                    if city and temp_kelvin is not None and wind_speed is not None and humidity is not None:
-                        temp_celsius = temp_kelvin - 273.15
-                        self.add_row_to_table(city, f"{temp_celsius:.2f} °C", f"{wind_speed} m/s", f"{humidity} %")
     def add_row_to_table(self, city, temp, wind_speed, humidity):
         try:
             temp_value = float(temp.split()[0])  
@@ -322,6 +312,7 @@ class Ui_MainWindow(object):
         criteria = self.cbTieuChi.currentText()  # "Nhiệt độ", "Tốc độ gió", "Độ ẩm"
         sort_method = self.cbLoaiSapXep.currentText()  # "Bubble Sort" or "Merge Sort"
         sort_order = self.cbThuTuSapXep.currentText()  # "Tăng dần" or "Giảm dần"
+        
         if sort_order == "Tăng dần":
             order = 'asc'
         elif sort_order == "Giảm dần":
@@ -329,6 +320,7 @@ class Ui_MainWindow(object):
         else:
             QtWidgets.QMessageBox.warning(None, "Warning", "Phương thức sắp xếp không hợp lệ!")
             return
+        
         rows = []
         for row in range(self.tableWidget.rowCount()):
             city = self.tableWidget.item(row, 0).text()
@@ -336,6 +328,7 @@ class Ui_MainWindow(object):
             wind_speed = float(self.tableWidget.item(row, 2).text().split()[0])  # Remove unit and convert to float
             humidity = float(self.tableWidget.item(row, 3).text().split()[0])  # Remove unit and convert to float
             rows.append([city, temp, wind_speed, humidity])
+        
         if criteria == "Nhiệt độ":
             key_index = 1  # Sort by temperature
         elif criteria == "Tốc độ gió":
@@ -345,26 +338,33 @@ class Ui_MainWindow(object):
         else:
             QtWidgets.QMessageBox.warning(None, "Warning", "Tiêu chí không hợp lệ!")
             return
+        
         start_time = timeit.default_timer()
         try:
-            if sort_method == "Bubble Sort":
-                bubble_sorter = BubbleSort(rows, key_index, order)  
-                sorted_rows = bubble_sorter.sort()  
-            elif sort_method == "Merge Sort":
-                merge_sorter = MergeSort(rows, key_index, order)  
-                sorted_rows = merge_sorter.sort()  
-            else:
-                QtWidgets.QMessageBox.warning(None, "Warning", "Phương thức sắp xếp không hợp lệ!")
-                return
+            sorter = Sort(
+                rows,            
+                key_index,      
+                order,           
+                self.rbTrucTiep,  
+                self.browseButton,  
+                self.rbNhapTay,  
+                self.inputThanhPho,  
+                self.editNhietDo,  
+                self.editTocDoGio,  
+                self.editDoAm   
+            )
+            sorted_rows = sorter.sort(algorithm="bubble" if sort_method == "Bubble Sort" else "merge")
         except Exception as e:
             QtWidgets.QMessageBox.warning(None, "Error", f"Đã có lỗi xảy ra: {str(e)}")
             return
         end_time = timeit.default_timer()
         elapsed_time = end_time - start_time
         self.editThoiGian.setText(f"{elapsed_time:.6f} giây")
+        
         self.tableWidget.setRowCount(0)
         for row in sorted_rows:
             self.add_row_to_table(row[0], f"{row[1]:.2f} °C", f"{row[2]} m/s", f"{row[3]} %")
+
     def delete_selected_row(self):
         """Delete the selected row in the table."""
         row = self.tableWidget.currentRow()
