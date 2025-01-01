@@ -12,19 +12,19 @@ class InputData:
         self.editTocDoGio = editTocDoGio
         self.editDoAm = editDoAm
     def enable_manual_input(self, checked):
-        if checked:  # If rbNhapTay is selected
-            self.editNhietDo.setReadOnly(False)
-            self.editTocDoGio.setReadOnly(False)
-            self.editDoAm.setReadOnly(False)
-        else:  # Reset to read-only if rbNhapTay is deselected
-            self.editNhietDo.setReadOnly(True)
-            self.editTocDoGio.setReadOnly(True)
-            self.editDoAm.setReadOnly(True)
+        if checked:  
+            self._set_editable(True)
+        else:  
+            self._set_editable(False)
+    def _set_editable(self, editable):
+        self.editNhietDo.setReadOnly(not editable)
+        self.editTocDoGio.setReadOnly(not editable)
+        self.editDoAm.setReadOnly(not editable)
     def fetch_data(self):
         if self.rbTrucTiep.isChecked():
             return self.fetch_data_from_api()
         elif self.rbNhapTay.isChecked():
-            return self.fetch_data_from_manual_input() 
+            return self.fetch_data_from_manual_input()
         else:
             return None
     def fetch_data_from_api(self):
@@ -38,7 +38,7 @@ class InputData:
             url = BASE_URL + f"appid={API_KEY}&q={city}"
             response = requests.get(url).json()
             if response.get("cod") != 200:
-                QtWidgets.QMessageBox.critical(None, "Error", f"Không tìm thấy thành phố: {city}")
+                QtWidgets.QMessageBox.warning(None, "Warning", "Không tìm thấy thành phố!")
                 return None
             temp_kelvin = response["main"]["temp"]
             humidity = response["main"]["humidity"]
@@ -46,14 +46,14 @@ class InputData:
             temp_celsius = temp_kelvin - 273.15
             return {"city": city, "temp": f"{temp_celsius:.2f} °C", "wind_speed": f"{wind_speed} m/s", "humidity": f"{humidity} %"}
         except Exception as e:
-            QtWidgets.QMessageBox.critical(None, "Error", f"Đã xảy ra lỗi: {e}")
+            QtWidgets.QMessageBox.warning(None, "Error", "Đã xảy ra lỗi!")
             return None  
     def fetch_data_from_manual_input(self):
         temp = self.editNhietDo.text()
         wind_speed = self.editTocDoGio.text()
         humidity = self.editDoAm.text()
         if not temp or not wind_speed or not humidity:
-            QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng nhập đầy đủ dữ liệu!")
+            QtWidgets.QMessageBox.warning(None, "Error", f"Đã xảy ra lỗi")
             return None
         city = self.inputThanhPho.text()
         return {"city": city, "temp": temp, "wind_speed": wind_speed, "humidity": humidity}
@@ -348,11 +348,11 @@ class Ui_MainWindow(object):
         start_time = timeit.default_timer()
         try:
             if sort_method == "Bubble Sort":
-                bubble_sorter = BubbleSorter(rows, key_index, order)  # Pass the order ('asc' or 'desc')
-                sorted_rows = bubble_sorter.sort()  # Call the sort method to get the sorted rows
+                bubble_sorter = BubbleSort(rows, key_index, order)  
+                sorted_rows = bubble_sorter.sort()  
             elif sort_method == "Merge Sort":
-                merge_sorter = MergeSorter(rows, key_index, order)  # Pass the order ('asc' or 'desc')
-                sorted_rows = merge_sorter.sort()  # Call the sort method to get the sorted rows
+                merge_sorter = MergeSort(rows, key_index, order)  
+                sorted_rows = merge_sorter.sort()  
             else:
                 QtWidgets.QMessageBox.warning(None, "Warning", "Phương thức sắp xếp không hợp lệ!")
                 return
@@ -365,12 +365,10 @@ class Ui_MainWindow(object):
         self.tableWidget.setRowCount(0)
         for row in sorted_rows:
             self.add_row_to_table(row[0], f"{row[1]:.2f} °C", f"{row[2]} m/s", f"{row[3]} %")
-        # Show a message box with the sorting time
-        #QtWidgets.QMessageBox.information(None, "Sắp xếp hoàn tất", f"Thời gian sắp xếp: {elapsed_time:.6f} giây")
     def delete_selected_row(self):
         """Delete the selected row in the table."""
         row = self.tableWidget.currentRow()
-        if row >= 0:  # Ensure a row is selected
+        if row >= 0:  
             self.tableWidget.removeRow(row)
         else:
             QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng chọn hàng để xóa!")
@@ -378,7 +376,7 @@ class Ui_MainWindow(object):
         """Delete all rows in the table."""
         row_count = self.tableWidget.rowCount()
         if row_count > 0:
-            self.tableWidget.setRowCount(0)  # Set row count to 0, which removes all rows
+            self.tableWidget.setRowCount(0)  
         else:
             QtWidgets.QMessageBox.warning(None, "Warning", "Bảng không có dữ liệu để xóa!")
 if __name__ == "__main__":
