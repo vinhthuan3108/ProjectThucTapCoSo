@@ -1,14 +1,20 @@
-from abc import ABC, abstractmethod
-class Sort(ABC):
-    def __init__(self, data, key_index, order):
+from main import InputData
+class Sort(InputData):
+    def __init__(self, data, key_index, order, rbTrucTiep, browseButton, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm):
+        super().__init__(rbTrucTiep, browseButton, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm)
         self.data = data
         self.key_index = key_index
-        self.order = order  # 'asc' for ascending, 'desc' for descending
-    @abstractmethod
-    def sort(self):
-        pass
-class BubbleSort(Sort):
-    def sort(self):
+        self.order = order  
+    def sort(self, algorithm="bubble"):
+        if algorithm == "bubble":
+            return self.bubble_sort()
+
+        elif algorithm == "merge":
+            return self.merge_sort()
+        else:
+            raise ValueError("Unsupported algorithm. Choose 'bubble' or 'merge'.")
+
+    def bubble_sort(self):
         n = len(self.data)
         for i in range(n):
             swapped = False
@@ -24,9 +30,10 @@ class BubbleSort(Sort):
             if not swapped:
                 break
         return self.data
-class MergeSort(Sort):
-    def sort(self):
+
+    def merge_sort(self):
         return self._merge_sort(self.data)
+
     def _merge_sort(self, data):
         if len(data) <= 1:
             return data
@@ -36,6 +43,7 @@ class MergeSort(Sort):
         left_sorted = self._merge_sort(left_half)
         right_sorted = self._merge_sort(right_half)
         return self._merge(left_sorted, right_sorted)
+
     def _merge(self, left, right):
         result = []
         i = j = 0
