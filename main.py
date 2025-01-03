@@ -3,26 +3,24 @@ from VisualizationSort import *
 import requests, csv, timeit
 from SortingAlgorithm import *
 class InputData:
-    def __init__(self, rbTrucTiep, browseButton, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm):
+    def __init__(self, rbTrucTiep, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm):
         self.rbTrucTiep = rbTrucTiep
-        self.browseButton = browseButton
         self.rbNhapTay = rbNhapTay
         self.inputThanhPho = inputThanhPho
         self.editNhietDo = editNhietDo
         self.editTocDoGio = editTocDoGio
         self.editDoAm = editDoAm
         self.csv_data = None  
+    def _set_editable(self, editable):
+        self.editNhietDo.setReadOnly(not editable)
+        self.editTocDoGio.setReadOnly(not editable)
+        self.editDoAm.setReadOnly(not editable)    
     def enable_manual_input(self, checked):
         if checked:  
             self._set_editable(True)
             self.csv_data = None
         else:  
             self._set_editable(False)
-    def _set_editable(self, editable):
-        self.editNhietDo.setReadOnly(not editable)
-        self.editTocDoGio.setReadOnly(not editable)
-        self.editDoAm.setReadOnly(not editable)
-
     def load_csv_data(self, file_path):
         try:
             with open(file_path, newline='', encoding='utf-8') as csvfile:
@@ -184,12 +182,12 @@ class Ui_MainWindow(object):
         self.buttonDeleteAll.clicked.connect(self.delete_all_rows)
         self.buttonSort.clicked.connect(self.visualization_sort_window)
         self.buttonSort.clicked.connect(self.sort_table)
-        self.input_data_handler = InputData(self.rbTrucTiep, self.browseButton, self.rbNhapTay, self.inputThanhPho, 
+        self.input_data_handler = InputData(self.rbTrucTiep, self.rbNhapTay, self.inputThanhPho, 
                                             self.editNhietDo, self.editTocDoGio, self.editDoAm,)
         self.rbNhapTay.toggled.connect(self.input_data_handler.enable_manual_input)
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Sắp xếp thời tiết - Vĩnh Thuận - 64132409"))
         self.buttonDeleteRow.setText(_translate("MainWindow", "Xóa hàng đang chọn"))
         self.buttonDeleteAll.setText(_translate("MainWindow", "Xóa tất cả hàng"))
         self.buttonSort.setText(_translate("MainWindow", "Sắp xếp"))
@@ -210,18 +208,15 @@ class Ui_MainWindow(object):
         self.pushButton.setText(_translate("MainWindow", "Nhập Thành Phố"))
         self.pushButton_2.setText(_translate("MainWindow", "Hiện Kết Quả Lên Bảng"))
     def browseFile(self):
-        """Open file dialog to select a CSV file"""
         file_dialog = QtWidgets.QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv);;All Files (*)")
         if file_path:
-            # Load the data from CSV into InputData
             self.input_data_handler.load_csv_data(file_path)
-            # Now show the data from CSV into the table
             self.show_data_on_table()
     def fetch_weather_data(self):
         data = self.input_data_handler.fetch_data()
         if data:
-            if isinstance(data, dict):  # Đảm bảo là dữ liệu từ API hoặc nhập tay
+            if isinstance(data, dict):  
                 self.editNhietDo.setText(data['temp'])
                 self.editTocDoGio.setText(data['wind_speed'])
                 self.editDoAm.setText(data['humidity'])
@@ -236,7 +231,6 @@ class Ui_MainWindow(object):
                         temp_celsius = temp_kelvin - 273.15
                         self.add_row_to_table(city, f"{temp_celsius:.2f} °C", f"{wind_speed} m/s", f"{humidity} %")
     def show_data_on_table(self):
-        """Show data from either API/manual input or CSV"""
         if self.input_data_handler.csv_data:
             for item in self.input_data_handler.csv_data:
                 city = item["city"]
@@ -271,48 +265,42 @@ class Ui_MainWindow(object):
         self.tableWidget.setItem(row_position, 1, QtWidgets.QTableWidgetItem(temp))
         self.tableWidget.setItem(row_position, 2, QtWidgets.QTableWidgetItem(wind_speed))
         self.tableWidget.setItem(row_position, 3, QtWidgets.QTableWidgetItem(humidity))
+        
     def visualization_sort_window(self):
         criteria = self.cbTieuChi.currentText()  # "Nhiệt độ", "Tốc độ gió", "Độ ẩm"
         sort_method = self.cbLoaiSapXep.currentText()  # "Bubble Sort" or "Merge Sort"
         rows = []
         for row in range(self.tableWidget.rowCount()):
             city = self.tableWidget.item(row, 0).text()
-            temp = float(self.tableWidget.item(row, 1).text().split()[0])  # Remove the unit and convert to float
-            wind_speed = float(self.tableWidget.item(row, 2).text().split()[0])  # Remove unit and convert to float
-            humidity = float(self.tableWidget.item(row, 3).text().split()[0])  # Remove unit and convert to float
+            temp = float(self.tableWidget.item(row, 1).text().split()[0])  
+            wind_speed = float(self.tableWidget.item(row, 2).text().split()[0])  
+            humidity = float(self.tableWidget.item(row, 3).text().split()[0])  
             rows.append([city, temp, wind_speed, humidity])
         if criteria == "Nhiệt độ":
-            key_index = 1  # Sort by temperature
+            key_index = 1 
         elif criteria == "Tốc độ gió":
-            key_index = 2  # Sort by wind speed
+            key_index = 2  
         elif criteria == "Độ ẩm":
-            key_index = 3  # Sort by humidity
-        else:
-            QtWidgets.QMessageBox.warning(None, "Warning", "Tiêu chí không hợp lệ!")
+            key_index = 3  
             return
         try:
             if sort_method == "Bubble Sort":
-                # Visualize sorting if Bubble Sort is selected
-                values = [row[key_index] for row in rows]  # Extract column values to sort
+                values = [row[key_index] for row in rows]  
                 self.visualization_widget = SortVisualizationWidget(values, sort_type="bubble")
                 self.visualization_widget.show()
-
-            elif sort_method == "Merge Sort":
-                # Visualize sorting if Merge Sort is selected
-                values = [row[key_index] for row in rows]  # Extract column values to sort
-                self.visualization_widget = SortVisualizationWidget(values, sort_type="merge")
-                self.visualization_widget.show()
             else:
-                QtWidgets.QMessageBox.warning(None, "Warning", "Phương thức sắp xếp không hợp lệ!")
+                values = [row[key_index] for row in rows]  
+                self.visualization_widget = SortVisualizationWidget(values, sort_type="merge")
+                self.visualization_widget.show() 
                 return
         except Exception as e:
             QtWidgets.QMessageBox.warning(None, "Error", f"Đã có lỗi xảy ra: {str(e)}")
             return
+        
     def sort_table(self):
         criteria = self.cbTieuChi.currentText()  # "Nhiệt độ", "Tốc độ gió", "Độ ẩm"
         sort_method = self.cbLoaiSapXep.currentText()  # "Bubble Sort" or "Merge Sort"
         sort_order = self.cbThuTuSapXep.currentText()  # "Tăng dần" or "Giảm dần"
-        
         if sort_order == "Tăng dần":
             order = 'asc'
         elif sort_order == "Giảm dần":
@@ -320,39 +308,25 @@ class Ui_MainWindow(object):
         else:
             QtWidgets.QMessageBox.warning(None, "Warning", "Phương thức sắp xếp không hợp lệ!")
             return
-        
         rows = []
         for row in range(self.tableWidget.rowCount()):
             city = self.tableWidget.item(row, 0).text()
-            temp = float(self.tableWidget.item(row, 1).text().split()[0])  # Remove the unit and convert to float
-            wind_speed = float(self.tableWidget.item(row, 2).text().split()[0])  # Remove unit and convert to float
-            humidity = float(self.tableWidget.item(row, 3).text().split()[0])  # Remove unit and convert to float
+            temp = float(self.tableWidget.item(row, 1).text().split()[0])  
+            wind_speed = float(self.tableWidget.item(row, 2).text().split()[0])  
+            humidity = float(self.tableWidget.item(row, 3).text().split()[0])  
             rows.append([city, temp, wind_speed, humidity])
-        
         if criteria == "Nhiệt độ":
-            key_index = 1  # Sort by temperature
+            key_index = 1 
         elif criteria == "Tốc độ gió":
-            key_index = 2  # Sort by wind speed
+            key_index = 2  
         elif criteria == "Độ ẩm":
-            key_index = 3  # Sort by humidity
+            key_index = 3  
         else:
             QtWidgets.QMessageBox.warning(None, "Warning", "Tiêu chí không hợp lệ!")
             return
-        
         start_time = timeit.default_timer()
         try:
-            sorter = Sort(
-                rows,            
-                key_index,      
-                order,           
-                self.rbTrucTiep,  
-                self.browseButton,  
-                self.rbNhapTay,  
-                self.inputThanhPho,  
-                self.editNhietDo,  
-                self.editTocDoGio,  
-                self.editDoAm   
-            )
+            sorter = Sort(rows, key_index, order, self.rbTrucTiep, self.rbNhapTay, self.inputThanhPho, self.editNhietDo, self.editTocDoGio, self.editDoAm)
             sorted_rows = sorter.sort(algorithm="bubble" if sort_method == "Bubble Sort" else "merge")
         except Exception as e:
             QtWidgets.QMessageBox.warning(None, "Error", f"Đã có lỗi xảy ra: {str(e)}")
@@ -364,16 +338,14 @@ class Ui_MainWindow(object):
         self.tableWidget.setRowCount(0)
         for row in sorted_rows:
             self.add_row_to_table(row[0], f"{row[1]:.2f} °C", f"{row[2]} m/s", f"{row[3]} %")
-
+            
     def delete_selected_row(self):
-        """Delete the selected row in the table."""
         row = self.tableWidget.currentRow()
         if row >= 0:  
             self.tableWidget.removeRow(row)
         else:
             QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng chọn hàng để xóa!")
     def delete_all_rows(self):
-        """Delete all rows in the table."""
         row_count = self.tableWidget.rowCount()
         if row_count > 0:
             self.tableWidget.setRowCount(0)  
