@@ -1,7 +1,7 @@
 from main import InputData
 class Sort(InputData):
-    def __init__(self, data, key_index, order, rbTrucTiep, browseButton, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm):
-        super().__init__(rbTrucTiep, browseButton, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm)
+    def __init__(self, data, key_index, order, rbTrucTiep, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm):
+        super().__init__(rbTrucTiep, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm)
         self.data = data
         self.key_index = key_index
         self.order = order  
@@ -33,7 +33,6 @@ class Sort(InputData):
 
     def merge_sort(self):
         return self._merge_sort(self.data)
-
     def _merge_sort(self, data):
         if len(data) <= 1:
             return data
@@ -43,12 +42,10 @@ class Sort(InputData):
         left_sorted = self._merge_sort(left_half)
         right_sorted = self._merge_sort(right_half)
         return self._merge(left_sorted, right_sorted)
-
     def _merge(self, left, right):
         result = []
         i = j = 0
         while i < len(left) and j < len(right):
-            # For ascending order
             if self.order == 'asc':
                 if left[i][self.key_index] < right[j][self.key_index]:
                     result.append(left[i])
@@ -56,7 +53,6 @@ class Sort(InputData):
                 else:
                     result.append(right[j])
                     j += 1
-            # For descending order
             elif self.order == 'desc':
                 if left[i][self.key_index] > right[j][self.key_index]:
                     result.append(left[i])
@@ -67,7 +63,6 @@ class Sort(InputData):
         while i < len(left):
             result.append(left[i])
             i += 1
-
         while j < len(right):
             result.append(right[j])
             j += 1
