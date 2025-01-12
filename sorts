@@ -1,0 +1,50 @@
+class Sort():    
+    def sort_data(self, data, key_index, sort_method, order):
+        if sort_method == "Bubble Sort":
+            sorted_data = self.bubble_sort(data, key_index, order)
+        elif sort_method == "Merge Sort":
+            sorted_data = self.merge_sort(data, key_index, order)
+        else:
+            sorted_data = data  
+        return sorted_data
+    
+    def bubble_sort(self, data, key_index, order):
+        n = len(data)
+        for i in range(n):
+            swapped = False
+            for j in range(0, n - i - 1):
+                if (order == 'asc' and data[j][key_index] > data[j + 1][key_index]) or \
+                   (order == 'desc' and data[j][key_index] < data[j + 1][key_index]):
+                    data[j], data[j + 1] = data[j + 1], data[j]
+                    swapped = True
+            if not swapped:
+                break
+        return data
+
+    def merge(self, left, right, key_index, order):
+        result = []
+        i = j = 0
+        while i < len(left) and j < len(right):
+            if (order == 'asc' and left[i][key_index] < right[j][key_index]) or \
+               (order == 'desc' and left[i][key_index] > right[j][key_index]):
+                result.append(left[i])
+                i += 1
+            else:
+                result.append(right[j])
+                j += 1
+        while i < len(left):
+            result.append(left[i])
+            i += 1
+        while j < len(right):
+            result.append(right[j])
+            j += 1
+        return result
+    def merge_sort(self, data, key_index, order):
+        if len(data) <= 1:
+            return data
+        mid = len(data) // 2
+        left_half = data[:mid]
+        right_half = data[mid:]
+        left_sorted = self.merge_sort(left_half, key_index, order)
+        right_sorted = self.merge_sort(right_half, key_index, order)
+        return self.merge(left_sorted, right_sorted, key_index, order)
