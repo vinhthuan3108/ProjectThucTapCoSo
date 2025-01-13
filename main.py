@@ -21,6 +21,7 @@ class Input:
         if not city:
             raise ValueError("Vui lòng nhập tên thành phố!")
         API_KEY = "bd64ba52f144248132813357b07e5338"  
+        
         BASE_URL = "http://api.openweathermap.org/data/2.5/weather?"
         try:
             url = BASE_URL + f"appid={API_KEY}&q={city}"
@@ -54,12 +55,16 @@ class Ui_MainWindow():
             QWidget {
                 color: black;  
             }
-            QPushButton, QComboBox, QRadioButton, QLabel, QLineEdit {
+            QPushButton, QComboBox, QRadioButton, QLabel, QTextEdit {
                 font: 12pt;  
             }
             QLabel#labelTitle {
                 font: bold 21pt "Segoe Fluent Icons";  
                 color: #0066CC;  
+            }
+            QLabel#labelNote {
+                font: bold 11pt "Segoe Fluent Icons";  
+                color: grey;  
             }
             QLabel#labelVisualization {
                 font: bold 16pt "Segoe Fluent Icons";  
@@ -78,7 +83,7 @@ class Ui_MainWindow():
         self.buttonBrowse.setGeometry(QtCore.QRect(480, 100, 123, 30))
         self.buttonBrowse.setObjectName("buttonBrowse")
         self.buttonDisplay = QtWidgets.QPushButton(parent=self.centralwidget)
-        self.buttonDisplay.setGeometry(QtCore.QRect(320, 300, 180, 30))
+        self.buttonDisplay.setGeometry(QtCore.QRect(320, 300, 250, 30))
         self.buttonDisplay.setObjectName("buttonDisplay")
         self.buttonDeleteRow = QtWidgets.QPushButton(parent=self.centralwidget)
         self.buttonDeleteRow.setGeometry(QtCore.QRect(305, 700, 160, 30))
@@ -127,12 +132,15 @@ class Ui_MainWindow():
         self.editThoiGian.setGeometry(QtCore.QRect(510, 628, 133, 26))
         self.editThoiGian.setReadOnly(True)
         self.editThoiGian.setObjectName("editThoiGian")
-        self.editThanhPho = QtWidgets.QLineEdit(parent=self.centralwidget)
-        self.editThanhPho.setGeometry(QtCore.QRect(110, 162, 148, 26))
+        self.editThanhPho = QtWidgets.QTextEdit(parent=self.centralwidget)
+        self.editThanhPho.setGeometry(QtCore.QRect(110, 162, 148, 106))
         self.editThanhPho.setObjectName("editThanhPho")
         self.labelTitle = QtWidgets.QLabel(parent=self.centralwidget)
-        self.labelTitle.setGeometry(QtCore.QRect(500, 20, 600, 80))
+        self.labelTitle.setGeometry(QtCore.QRect(500, 5, 600, 80))
         self.labelTitle.setObjectName("labelTitle")
+        self.labelNote = QtWidgets.QLabel(parent=self.centralwidget)
+        self.labelNote.setGeometry(QtCore.QRect(50, 40, 700, 80))
+        self.labelNote.setObjectName("labelNote")
         self.labelNhietDo = QtWidgets.QLabel(parent=self.centralwidget)
         self.labelNhietDo.setGeometry(QtCore.QRect(524, 165, 71, 22))
         self.labelNhietDo.setObjectName("labelNhietDo")
@@ -182,13 +190,14 @@ class Ui_MainWindow():
         self.cbThuTuSapXep.setItemText(0, _translate("MainWindow", "Tăng dần"))
         self.cbThuTuSapXep.setItemText(1, _translate("MainWindow", "Giảm dần"))
         self.labelTitle.setText(_translate("MainWindow", "ỨNG DỤNG SẮP XẾP DỮ LIỆU THỜI TIẾT"))
+        self.labelNote.setText(_translate("MainWindow", "Khi chọn lấy dữ liệu trực tiếp có thể nhập nhiều thành phố, ngăn cách nhau bằng dấu phẩy"))
         self.labelNhietDo.setText(_translate("MainWindow", "Nhiệt độ"))
         self.labelTocDoGio.setText(_translate("MainWindow", "Tốc độ gió"))
         self.labelDoAm.setText(_translate("MainWindow", "Độ ẩm"))
         self.labelThoiGian.setText(_translate("MainWindow", "Thời gian sắp xếp"))
         self.rbTrucTiep.setText(_translate("MainWindow", "Lấy dữ liệu trực tiếp"))
         self.rbNhapTay.setText(_translate("MainWindow", "Nhập tay"))
-        self.buttonDisplay.setText(_translate("MainWindow", "Hiện Dữ Liệu Lên Bảng"))
+        self.buttonDisplay.setText(_translate("MainWindow", "Hiện Dữ Liệu Nhập Tay Lên Bảng"))
 class WeatherApp(QtWidgets.QMainWindow, Ui_MainWindow, Input):
     def __init__(self):
         super().__init__()
@@ -232,23 +241,33 @@ class WeatherApp(QtWidgets.QMainWindow, Ui_MainWindow, Input):
             except Exception as e:
                 QtWidgets.QMessageBox.critical(self, "Error", str(e))
     def fetch_weather_data(self):
-        city = self.editThanhPho.text()
+        cities = self.editThanhPho.toPlainText().split(',')  
         if self.rbTrucTiep.isChecked():
-            try:
-                self.API_data(city)
-                self.editNhietDo.setText(f"{self.temp:.2f} °C")
-                self.editTocDoGio.setText(f"{self.wind_speed} m/s")
-                self.editDoAm.setText(f"{self.humidity} %")
-            except ValueError as e:
-                QtWidgets.QMessageBox.critical(None, "Error", str(e))
-    def show_data_on_table(self):
-        city = self.editThanhPho.text()
-        temp = self.editNhietDo.text()
-        wind_speed = self.editTocDoGio.text()
-        humidity = self.editDoAm.text()
-        if not temp or not wind_speed or not humidity:
-            QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng nhập đầy đủ dữ liệu!")
-            return
+            for city in cities:
+                city = city.strip()  
+                try:
+                    self.API_data(city)  # Giả sử API trả về giá trị nhiệt độ, tốc độ gió và độ ẩm
+                    self.editNhietDo.setText(f"{self.temp:.2f} °C")
+                    self.editTocDoGio.setText(f"{self.wind_speed} m/s")
+                    self.editDoAm.setText(f"{self.humidity} %")
+                    # Gọi trực tiếp add_row_to_table sau khi có dữ liệu
+                    self.add_row_to_table(city, f"{self.temp:.2f} °C", f"{self.wind_speed} m/s", f"{self.humidity} %")
+                except ValueError as e:
+                    QtWidgets.QMessageBox.critical(None, "Error", str(e))
+
+    def show_data_on_table(self, city):
+        if self.rbNhapTay.isChecked():
+            city = self.editThanhPho.toPlainText()
+            temp = self.editNhietDo.text()
+            wind_speed = self.editTocDoGio.text()
+            humidity = self.editDoAm.text()
+            if not temp or not wind_speed or not humidity:
+                QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng nhập đầy đủ dữ liệu!")
+                return
+        else:
+            temp = self.editNhietDo.text()
+            wind_speed = self.editTocDoGio.text()
+            humidity = self.editDoAm.text()
         self.add_row_to_table(city, temp, wind_speed, humidity)
     def add_row_to_table(self, city, temp, wind_speed, humidity):
         try:
